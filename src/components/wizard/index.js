@@ -10,35 +10,29 @@ module.exports = (app) => {
     const Wizard = {
         computed: app.helpers.sharedComputed(),
         data: function() {
-            return {
+            let data = {
+                account: {
+                    selection: app.state.availability.voip.selection,
+                },
                 steps: [
                     {name: 'welcome', ready: true},
                     {name: 'telemetry', ready: null}, // hide the next button.
-                    {name: 'voipaccount', ready: false},
                     {name: 'microphone', ready: null},
                 ],
             }
+
+            if (app.state.availability.voip.selection) {
+                data.steps.push({name: 'voipaccount', ready: false})
+            }
+
+            return data
         },
         methods: Object.assign({
             finish: function() {
                 app.setState({settings: {wizard: {completed: true, step: 0}}}, {persist: true})
-                app.emit('bg:calls:disconnect', {reconnect: true})
                 app.notify({icon: 'settings', message: this.$t('almost done! Please check your audio settings.'), type: 'info'})
             },
             nextStep: function() {
-                if (this.steps[this.step].name === 'voipaccount') {
-                    this.settings.webrtc.enabled = true
-                    app.setState({
-                        settings: {
-                            webrtc: {
-                                account: {
-                                    selected: this.settings.webrtc.account.selected,
-                                },
-                                enabled: true,
-                            },
-                        },
-                    }, {persist: true})
-                }
                 app.setState({settings: {wizard: {step: this.step += 1}}}, {persist: true})
             },
             validateStep: function(type) {
@@ -62,7 +56,7 @@ module.exports = (app) => {
             // The microphone step is ready when the permission
             // is already there.
             this.validateStep('microphone')
-            this.validateStep('voipaccount')
+            if (this.account.selection) this.validateStep('voipaccount')
         },
         render: templates.wizard.r,
         staticRenderFns: templates.wizard.s,
@@ -81,10 +75,30 @@ module.exports = (app) => {
             * @param {String} selectedVoipaccountId - The VoIP account that is being selected.
             */
             'settings.webrtc.account.selected.id': function(selectedVoipaccountId) {
-                this.validateStep('voipaccount')
+                if (this.account.selection) this.validateStep('voipaccount')
             },
             'settings.webrtc.account.status': function(status) {
-                this.validateStep('voipaccount')
+                if (this.account.selection) this.validateStep('voipaccount')
+            },
+            'settings.wizard.step': function(newStep) {
+                if (this.steps[newStep].name === 'voipaccount') {
+                    if (!app.state.availability.voip.selection) {
+                        // Skip the account selection step when there are no
+                        // accounts from a platform backend to choose from.
+                        app.setState({settings: {wizard: {step: this.step += 1}}}, {persist: true})
+                    }
+
+                    app.setState({
+                        settings: {
+                            webrtc: {
+                                account: {
+                                    selected: this.settings.webrtc.account.selected,
+                                },
+                                enabled: true,
+                            },
+                        },
+                    }, {persist: true})
+                }
             },
         },
     }

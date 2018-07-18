@@ -70,13 +70,14 @@
 
     <!-- Phone preferences -->
     <div class="tab" :class="{'is-active': tabs.active === 'phone'}">
+
         <Field name="webrtc_enabled" type="checkbox"
             :disabled="env.isFirefox || !settings.webrtc.account.options.length"
             :label="$t('use as softphone')"
-            :model.sync="settings.webrtc.enabled"
+            :model.sync="settings.webrtc.toggle"
             :help="env.isFirefox ? $t('firefox doesn\'t support this feature yet.') : $t('use WebRTC to receive incoming calls with and place outgoing calls.')"/>
 
-        <VoipaccountPicker :label="$t('softphone VoIP account')" :v="$v"/>
+        <VoipaccountPicker :label="$t('softphone VoIP account')" :v="$v" v-if="availability.voip.selection"/>
     </div>
 
     <!-- Audio settings -->

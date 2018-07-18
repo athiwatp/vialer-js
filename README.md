@@ -38,7 +38,7 @@ conferences, chatting and sharing files; all over secured encrypted channels.
 <img src="https://vialer-js.io/screenshot-4.png" height="200">
 
 Written in environment-agnostic JavaScript, using a simple but powerful reactive
-data-orientated design, it can operate as a WebExtension for Blink &
+data-oriented design, it can operate as a WebExtension for Blink &
 Gecko-compatible browsers, a website widget, a desktop app(Electron)
 or as a headless Node.js application, while at the same time keeping it easy
 for developers to implement new features for all platforms at once at a very

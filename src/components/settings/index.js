@@ -50,15 +50,17 @@ module.exports = (app) => {
                 }
             },
             save: function(e) {
-                app.setState({
-                    // Disable dnd after a save to keep condition checks simple.
-                    availability: {dnd: false},
-                    settings: this.settings,
-                }, {persist: true})
+                // Strip properties from the settings object that we don't
+                // want to update, because they are not part of a
+                // user-initiated setting.
+                let settings = app.utils.copyObject(this.settings)
+                delete settings.webrtc.account.options
+                // Disable dnd after a save to keep condition checks simple.
+                app.setState({availability: {dnd: false}, settings}, {persist: true})
 
                 // Update the vault settings.
                 app.setState({app: {vault: this.app.vault}}, {encrypt: false, persist: true})
-                app.notify({icon: 'settings', message: app.$t('settings stored'), type: 'success'})
+                app.notify({icon: 'settings', message: app.$t('settings are updated'), type: 'success'})
             },
         }, app.helpers.sharedMethods()),
         mounted: async function() {
@@ -69,6 +71,7 @@ module.exports = (app) => {
         staticRenderFns: templates.settings.s,
         store: {
             app: 'app',
+            availability: 'availability',
             devices: 'settings.webrtc.devices',
             env: 'env',
             ringtones: 'settings.ringtones',
@@ -138,14 +141,18 @@ module.exports = (app) => {
                     },
                 },
             }
-            // Add the validation that is shared with step_voipaccount.
-            validations.settings.webrtc.account = app.helpers.sharedValidations.bind(this)().settings.webrtc.account
+            // Add the validation that is shared with step_voipaccount, but
+            // only if the user is supposed to choose between voiapccount options.
+            if (this.availability.voip.selection) {
+                validations.settings.webrtc.account = app.helpers.sharedValidations.bind(this)().settings.webrtc.account
+            }
+
             return validations
         },
         watch: {
             /**
-            * Change the sink for the ringtone when the selected
-            * ringtone device changes.
+            * Change the sink for the ringtone when the
+            * selected ringtone device changes.
             * @param {String} newSinkId - The selected sink for sounds.
             */
             'devices.sounds.selected.id': function(newSinkId) {
